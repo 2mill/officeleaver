@@ -1,5 +1,8 @@
 from officeleaver.apis.api import Api
+from typing import Optional
+from enum import Enum
 import requests
+from datetime import datetime, timedelta
 class CityMapper(Api):
 	api_key: str
 	api_endpoint = 'https://api.external.citymapper.com/api/1/'
@@ -36,50 +39,74 @@ class Service:
 		self.name = name
 		self.vehicle_types = vehicle_type,
 		self.brand = brand
+
+
+
+
+class TravelMode(Enum):
+	walk = "walk"
+	transit = "transit"
+	self_piloted = "self_piloted"
+	on_demand = "on_demand"
+
+
+class Instruction:
+	class InstructionType(Enum):
+		depart = "depart"
+		turn = "turn"
+		enter_roundabout = "enter_roundabout"
+		exit_roundabout = "exit_roundabout"
+	class TypeDirection(Enum):
+		straight = "straight"
+		uturn = "uturn"
+		left = "left"
+		slight_left = "slight_left"
+		sharp_left = "sharp_left"
+		right = "right"
+		slight_right = "slight_right"
+		sharp_right = "sharp_right"
+	arrive = "arrive"
+	path_index: int
+	distance_meters: int
+	time_second: int
+	description_text: str
+	description_format: str
+	type: InstructionType
+	type_direction: TypeDirection
+
+class PathAnnotation:
+	start_index: int
+	end_index: int
+	should_walk: Optional[bool]
+
+class VehicleType(Enum):
+	bike = "bike"
+	bus = "bus"
+	bus_rapid_transit = "bus_rapid_transit"
+	car = "car"
+	ebike = "ebike"
+	escooter = "escooter"
+	# TODO add the rest.... https://docs.external.citymapper.com/api/#section/Leg
+
+class Service:
+	id: str
+	name: str
+	vehicle_types: Optional[list[VehicleType]]
+	brand: Optional[object]
+	images: Optional[list[object]]
+	color: Optional[str]
+	background_color: Optional[str]
+	text_color: Optional[str]
+	third_party_app: Optional[object]
+
+
 class Leg:
-	duration: str
-	travel_mode: str
-	departure_time: str
-	services: list[Service]
-	travel_mode_icons = {
-		'walk': '🚸',
-		'transit': '🚇'
-	}
-	def __init__(self, duration:str, travel_mode: str, departure_time:str, services: list[dict] = None) -> None:
-		self.duration = str(duration)
-		self.travel_mode = travel_mode
-		self.departure_time = departure_time
-		self.services: list[Service] = []
-		self.primary_service = services.pop()
-
-		if services:
-			for service in services:
-				self.services.append(
-					Service(
-						service['id'],
-						service['name'],
-						service['vehicle_types'],
-						service['brand']
-					)
-				)
-
-	def __str__(self) -> str:
-		travel_mode_icon = self.travel_mode_icons.get(self.travel_mode)
-		travel_mode_verb = {
-			'walk': 'WALK',
-			'transit': f"TAKE"
-
-
-
-		}
-
-		if not travel_mode_icon:
-			travel_mode_icon = '❔'
-
-
-
-		return f"{self.travel_mode.upper()}"
-		# return f"{travel_mode_icon} for {int(self.duration) // 60} minutes"
+	travel_mode: TravelMode
+	duration_seconds: Optional[str]
+	path: str # TODO make Google Polyline utility?
+	instructions: Optional[list[Instruction]]
+	vehicle_types: Optional[list[VehicleType]]
+	services: Optional[list[Service]]
 class Route:
 	duraction: str
 	accuracy: str
